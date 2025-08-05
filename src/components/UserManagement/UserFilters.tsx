@@ -50,7 +50,8 @@ export const UserFilters = ({
       dateRange: { from: null, to: null },
       pageSize: 100, // Default page size
       sortField: 'creationTime', // Default sort field
-      sortDirection: 'desc' // Default sort direction
+      sortDirection: 'desc', // Default sort direction
+      suspiciousOnly: 'all', // Reset to 'all'
     });
   };
 
@@ -151,17 +152,22 @@ export const UserFilters = ({
           </Select>
 
           <Select
-            value={pageSize.toString()}
-            onValueChange={(value) => onFiltersChange({ ...filters, pageSize: parseInt(value) })}
+            value={filters.pageSize.toString()}
+            onValueChange={(value) =>
+              onFiltersChange({ ...filters, pageSize: Number(value) })
+            }
           >
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-[100px]">
               <SelectValue placeholder="Page Size" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="10">10 per page</SelectItem>
-              <SelectItem value="25">25 per page</SelectItem>
-              <SelectItem value="50">50 per page</SelectItem>
-              <SelectItem value="100">100 per page</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+              <SelectItem value="250">250</SelectItem>
+              <SelectItem value="500">500</SelectItem>
+              <SelectItem value="1000">1000</SelectItem>
             </SelectContent>
           </Select>
 
@@ -189,6 +195,22 @@ export const UserFilters = ({
             <SelectContent>
               <SelectItem value="asc">Ascending</SelectItem>
               <SelectItem value="desc">Descending</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Replace Switch with Select for Suspicious Only */}
+          <Select
+            value={filters.suspiciousOnly || 'all'}
+            onValueChange={(value) =>
+              onFiltersChange({ ...filters, suspiciousOnly: value as UserFiltersType['suspiciousOnly'] })
+            }
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Suspicious Users" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="suspicious">Suspicious Only</SelectItem>
             </SelectContent>
           </Select>
         </div>

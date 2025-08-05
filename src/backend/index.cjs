@@ -73,10 +73,11 @@ db.exec(`CREATE TABLE IF NOT EXISTS users (
   creationTime TEXT,
   lastSignInTime TEXT,
   customClaims TEXT,
-  providerData TEXT
+  providerData TEXT,
+  isSuspicious INTEGER DEFAULT 0 -- Add this column
 )`);
 
-function insertOrUpdateUser(user) {
+function insertOrUpdateUser(user, isSuspiciousFlag = 0) { // Add isSuspiciousFlag
   // Normalize creationTime and lastSignInTime to ISO 8601
   let creationTime = user.creationTime;
   let lastSignInTime = user.lastSignInTime;
@@ -86,8 +87,8 @@ function insertOrUpdateUser(user) {
   try {
     lastSignInTime = user.lastSignInTime ? new Date(user.lastSignInTime).toISOString() : null;
   } catch (e) {}
-  db.prepare(`INSERT OR REPLACE INTO users (uid, email, displayName, photoURL, emailVerified, disabled, creationTime, lastSignInTime, customClaims, providerData)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+  db.prepare(`INSERT OR REPLACE INTO users (uid, email, displayName, photoURL, emailVerified, disabled, creationTime, lastSignInTime, customClaims, providerData, isSuspicious)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`) // Add isSuspicious
     .run(
       user.uid,
       user.email,
@@ -98,7 +99,8 @@ function insertOrUpdateUser(user) {
       creationTime,
       lastSignInTime,
       JSON.stringify(user.customClaims || {}),
-      JSON.stringify(user.providerData || [])
+      JSON.stringify(user.providerData || []),
+      isSuspiciousFlag // Pass the flag
     );
 }
 
@@ -111,19 +113,45 @@ app.use(express.json());
 
 app.post('/sync-users', async (req, res) => {
   try {
+    // 1. Fetch all users from Firebase
+    let allFirebaseUsers = [];
     let nextPageToken = undefined;
-    let total = 0;
     do {
       const result = await auth.listUsers(1000, nextPageToken);
-      result.users.forEach(userRecord => {
-        const user = userRecordToFirebaseUser(userRecord);
-        insertOrUpdateUser(user);
-        total++;
-      });
+      allFirebaseUsers = allFirebaseUsers.concat(result.users.map(userRecordToFirebaseUser));
       nextPageToken = result.pageToken;
     } while (nextPageToken);
-    res.json({ success: true, total });
+
+    // 2. Identify suspicious users
+    const userGroups = new Map(); // Key: normalizedName_creationDate, Value: [user1, user2, ...]
+    allFirebaseUsers.forEach(user => {
+      const normalizedName = user.displayName?.toLowerCase() || '';
+      const creationDate = user.creationTime ? new Date(user.creationTime).toISOString().split('T')[0] : '';
+      const key = `${normalizedName}_${creationDate}`;
+      if (!userGroups.has(key)) {
+        userGroups.set(key, []);
+      }
+      userGroups.get(key).push(user);
+    });
+
+    const suspiciousUids = new Set();
+    userGroups.forEach(userList => {
+      if (userList.length > 1) {
+        userList.forEach(user => suspiciousUids.add(user.uid));
+      }
+    });
+
+    // 3. Clear existing users in DB and insert/update with suspicious status
+    db.exec('DELETE FROM users'); // Clear existing data to ensure fresh sync and correct suspicious status
+
+    allFirebaseUsers.forEach(user => {
+      const isSuspiciousFlag = suspiciousUids.has(user.uid) ? 1 : 0;
+      insertOrUpdateUser(user, isSuspiciousFlag);
+    });
+
+    res.json({ success: true, total: allFirebaseUsers.length });
   } catch (err) {
+    console.error('Failed to sync users:', err);
     res.status(500).json({ error: 'Failed to sync users', details: err.message });
   }
 });
@@ -185,6 +213,11 @@ app.get('/users', (req, res) => {
     params.push(dateTo);
   }
 
+  // Apply suspiciousOnly filter
+  if (req.query.suspiciousOnly === 'true') {
+    whereClauses.push('isSuspicious = 1');
+  }
+
   if (whereClauses.length > 0) {
     query += ' WHERE ' + whereClauses.join(' AND ');
     countQuery += ' WHERE ' + whereClauses.join(' AND ');
@@ -223,6 +256,10 @@ app.get('/users', (req, res) => {
 app.post('/user/:uid', async (req, res) => {
   try {
     const user = await updateUser(req.params.uid, req.body);
+    // After updating in Firebase, update in SQLite
+    // Note: isSuspicious status is not re-calculated here for performance. 
+    // It will be updated on the next /sync-users call.
+    insertOrUpdateUser(user, user.isSuspicious ? 1 : 0); // Pass existing isSuspicious status
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update user' });
@@ -232,6 +269,8 @@ app.post('/user/:uid', async (req, res) => {
 app.delete('/user/:uid', async (req, res) => {
   try {
     await deleteUser(req.params.uid);
+    // After deleting in Firebase, delete from SQLite
+    db.prepare('DELETE FROM users WHERE uid = ?').run(req.params.uid);
     res.sendStatus(204);
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete user' });
@@ -242,6 +281,16 @@ app.post('/users/bulk-update', async (req, res) => {
   try {
     const { userIds, updates } = req.body;
     await bulkUpdateUsers(userIds, updates);
+    // After bulk updating in Firebase, update in SQLite
+    // Note: isSuspicious status is not re-calculated here for performance. 
+    // It will be updated on the next /sync-users call.
+    userIds.forEach(uid => {
+      // Fetch the updated user from Firebase to ensure consistency
+      auth.getUser(uid).then(userRecord => {
+        // Assuming userRecordToFirebaseUser now includes isSuspicious if available
+        insertOrUpdateUser(userRecordToFirebaseUser(userRecord), userRecord.isSuspicious ? 1 : 0);
+      }).catch(console.error); // Log error if fetching individual user fails
+    });
     res.sendStatus(200);
   } catch (err) {
     res.status(500).json({ error: 'Failed to bulk update users' });
@@ -252,6 +301,9 @@ app.post('/users/bulk-delete', async (req, res) => {
   try {
     const { userIds } = req.body;
     await bulkDeleteUsers(userIds);
+    // After bulk deleting in Firebase, delete from SQLite
+    const deleteStmt = db.prepare('DELETE FROM users WHERE uid = ?');
+    userIds.forEach(uid => deleteStmt.run(uid));
     res.sendStatus(200);
   } catch (err) {
     res.status(500).json({ error: 'Failed to bulk delete users' });

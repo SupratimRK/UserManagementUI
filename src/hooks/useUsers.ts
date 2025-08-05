@@ -15,7 +15,8 @@ export const useUsers = () => {
     dateRange: { from: null, to: null },
     pageSize: 100,
     sortField: 'creationTime', // Default sort field
-    sortDirection: 'desc' // Default sort direction
+    sortDirection: 'desc',
+    suspiciousOnly: 'all', // Default to 'all'
   });
   const [page, setPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -48,6 +49,9 @@ export const useUsers = () => {
       }
       if (filters.dateRange?.to) {
         queryParams.append('dateRangeTo', filters.dateRange.to.toISOString());
+      }
+      if (filters.suspiciousOnly === 'suspicious') { // Check for 'suspicious' string
+        queryParams.append('suspiciousOnly', 'true');
       }
 
       const res = await fetch(`${API_BASE}/users?${queryParams.toString()}`);
@@ -146,6 +150,7 @@ export const useUsers = () => {
     syncUsers,
     page,
     setPage,
-    totalUsers
+    totalUsers,
+    suspiciousUsers: users.filter(user => user.isSuspicious)
   };
 };

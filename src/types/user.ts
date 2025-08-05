@@ -15,6 +15,7 @@ export interface FirebaseUser {
     photoURL: string | null;
     providerId: string;
   }>;
+  isSuspicious?: boolean; // Add this property
 }
 
 export interface UserFilters {
@@ -29,6 +30,7 @@ export interface UserFilters {
   pageSize: number; // Make pageSize a required property
   sortField: keyof FirebaseUser; // Add sortField
   sortDirection: 'asc' | 'desc'; // Add sortDirection
+  suspiciousOnly?: 'all' | 'suspicious'; // Change to string literal type
 }
 
 export interface BulkAction {

@@ -1,4 +1,3 @@
-// ...existing code...
 import { FirebaseUser } from '@/types/user';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,7 +24,8 @@ import {
   Shield, 
   ShieldOff,
   Mail,
-  MailX
+  MailX,
+  AlertCircle // Add AlertCircle icon
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -148,6 +148,7 @@ export const UserTable = ({
               </span>
             </TableHead>
             <TableHead>Last Sign In</TableHead>
+            <TableHead>Suspicious</TableHead> {/* New column for suspicious users */}
             <TableHead className="w-12">
               <Checkbox
                 checked={selectedUsers.length === users.length && users.length > 0}
@@ -160,7 +161,7 @@ export const UserTable = ({
         </TableHeader>
         <TableBody>
           {users.map((user, index) => (
-            <TableRow key={user.uid} className="hover:bg-muted/50">
+            <TableRow key={user.uid} className={user.isSuspicious ? "bg-yellow-100/50 hover:bg-yellow-100" : "hover:bg-muted/50"}> {/* Highlight suspicious users */}
               <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
               <TableCell>
                 <div className="flex items-center space-x-3">
@@ -207,6 +208,16 @@ export const UserTable = ({
                     : 'Never'
                   }
                 </div>
+              </TableCell>
+              <TableCell>
+                {user.isSuspicious ? (
+                  <Badge variant="destructive" className="flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Suspicious
+                  </Badge>
+                ) : (
+                  <span className="text-muted-foreground text-sm">-</span>
+                )}
               </TableCell>
               <TableCell>
                 <Checkbox
