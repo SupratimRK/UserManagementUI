@@ -1,6 +1,6 @@
-import { UserManagementPortal } from '@/components/UserManagement/UserManagementPortal';
-import { ModeToggle } from '@/components/mode-toggle';
-import './App.css';
+import { UserManagementPortal } from "@/components/UserManagement/UserManagementPortal";
+import { ModeToggle } from "@/components/mode-toggle";
+import "./App.css";
 
 function App() {
   return (
