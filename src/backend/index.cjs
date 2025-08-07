@@ -141,12 +141,21 @@ app.post('/sync-users', async (req, res) => {
       }
     });
 
-    // 3. Clear existing users in DB and insert/update with suspicious status
-    db.exec('DELETE FROM users'); // Clear existing data to ensure fresh sync and correct suspicious status
+    // Get UIDs currently in SQLite
+    const existingUidsInDb = db.prepare('SELECT uid FROM users').all().map(row => row.uid);
+    const firebaseUidsSet = new Set(allFirebaseUsers.map(user => user.uid));
 
+    // Insert/Update users from Firebase
     allFirebaseUsers.forEach(user => {
       const isSuspiciousFlag = suspiciousUids.has(user.uid) ? 1 : 0;
       insertOrUpdateUser(user, isSuspiciousFlag);
+    });
+
+    // Delete users from SQLite that are no longer in Firebase
+    existingUidsInDb.forEach(uid => {
+      if (!firebaseUidsSet.has(uid)) {
+        db.prepare('DELETE FROM users WHERE uid = ?').run(uid);
+      }
     });
 
     res.json({ success: true, total: allFirebaseUsers.length });
