@@ -168,6 +168,8 @@ export const UserFilters = ({
               <SelectItem value="250">250</SelectItem>
               <SelectItem value="500">500</SelectItem>
               <SelectItem value="1000">1000</SelectItem>
+              <SelectItem value="2500">2500</SelectItem>
+              <SelectItem value="5000">5000</SelectItem>
             </SelectContent>
           </Select>
 
