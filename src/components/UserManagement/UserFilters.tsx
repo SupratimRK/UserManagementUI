@@ -18,6 +18,7 @@ interface UserFiltersProps {
   totalUsers: number;
   page: number;
   pageSize: number;
+  onAutoDisableSuspicious: () => Promise<void>;
 }
 
 const providerOptions = [
@@ -32,6 +33,7 @@ export const UserFilters = ({
   totalUsers,
   page,
   pageSize,
+  onAutoDisableSuspicious,
 }: UserFiltersProps) => {
   const { syncUsers, loading } = useUsers();
   const activeFiltersCount = [
@@ -71,6 +73,15 @@ export const UserFilters = ({
             className="h-8 ml-2"
           >
             {loading ? 'Syncing...' : 'Sync Users'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onAutoDisableSuspicious}
+            disabled={loading}
+            className="h-8 ml-2"
+          >
+            Auto-Disable All Suspicious
           </Button>
         </div>
         

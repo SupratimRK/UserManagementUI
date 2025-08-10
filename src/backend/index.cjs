@@ -319,4 +319,38 @@ app.post('/users/bulk-delete', async (req, res) => {
   }
 });
 
+app.post('/auto-disable-suspicious-users', async (req, res) => {
+  try {
+    const suspiciousUsers = db.prepare('SELECT uid FROM users WHERE isSuspicious = 1 AND disabled = 0').all();
+    const uidsToDisable = suspiciousUsers.map(user => user.uid);
+
+    if (uidsToDisable.length === 0) {
+      return res.json({ success: true, message: 'No suspicious users to disable.' });
+    }
+
+    const batchSize = 100; // Process 100 users at a time
+    let disabledCount = 0;
+
+    for (let i = 0; i < uidsToDisable.length; i += batchSize) {
+      const batchUids = uidsToDisable.slice(i, i + batchSize);
+      console.log(`Disabling batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(uidsToDisable.length / batchSize)}: ${batchUids.length} users...`);
+      const disablePromises = batchUids.map(uid => auth.updateUser(uid, { disabled: true }));
+      await Promise.all(disablePromises);
+
+      // Update SQLite after disabling in Firebase for the current batch
+      const updateStmt = db.prepare('UPDATE users SET disabled = 1 WHERE uid = ?');
+      batchUids.forEach(uid => updateStmt.run(uid));
+      disabledCount += batchUids.length;
+
+      // Add a delay between batches to avoid hitting rate limits
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Increased delay to 1 second
+    }
+
+    res.json({ success: true, disabledCount: disabledCount });
+  } catch (err) {
+    console.error('Failed to auto-disable suspicious users:', err);
+    res.status(500).json({ error: 'Failed to auto-disable suspicious users', details: err.message });
+  }
+});
+
 app.listen(3001, () => console.log('Backend running on port 3001'));

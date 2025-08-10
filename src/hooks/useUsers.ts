@@ -136,6 +136,24 @@ export const useUsers = () => {
     }
   }, []);
 
+  const autoDisableSuspiciousUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/auto-disable-suspicious-users`, { method: 'POST' });
+      const result = await res.json();
+      if (result.success) {
+        fetchUsers(); // Re-fetch users to update their disabled status
+      } else {
+        setError(result.message || 'Failed to auto-disable suspicious users');
+      }
+    } catch (err) {
+      setError('Failed to auto-disable suspicious users');
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchUsers]);
+
   return {
     users,
     loading,
@@ -151,6 +169,7 @@ export const useUsers = () => {
     page,
     setPage,
     totalUsers,
-    suspiciousUsers: users.filter(user => user.isSuspicious)
+    suspiciousUsers: users.filter(user => user.isSuspicious),
+    autoDisableSuspiciousUsers
   };
 };

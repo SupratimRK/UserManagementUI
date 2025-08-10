@@ -58,9 +58,11 @@ export const BulkActions = ({
   return (
     <>
       <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border border-dashed">
-        <span className="text-sm font-medium">
-          {selectedCount} user{selectedCount > 1 ? 's' : ''} selected
-        </span>
+        {selectedCount > 0 && (
+          <span className="text-sm font-medium">
+            {selectedCount} user{selectedCount > 1 ? 's' : ''} selected
+          </span>
+        )}
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -70,32 +72,35 @@ export const BulkActions = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleBulkAction(onBulkEnable)}>
+            <DropdownMenuItem onClick={() => handleBulkAction(onBulkEnable)} disabled={selectedCount === 0}>
               <Shield className="mr-2 h-4 w-4" />
-              Enable Users
+              Enable Selected Users
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleBulkAction(onBulkDisable)}>
+            <DropdownMenuItem onClick={() => handleBulkAction(onBulkDisable)} disabled={selectedCount === 0}>
               <ShieldOff className="mr-2 h-4 w-4" />
-              Disable Users
+              Disable Selected Users
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => setDeleteDialogOpen(true)}
               className="text-destructive"
+              disabled={selectedCount === 0}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete Users
+              Delete Selected Users
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onClearSelection}
-          disabled={loading}
-        >
-          Clear
-        </Button>
+        {selectedCount > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearSelection}
+            disabled={loading}
+          >
+            Clear Selection
+          </Button>
+        )}
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

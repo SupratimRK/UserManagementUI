@@ -30,6 +30,7 @@ export const UserManagementPortal = () => {
     page,
     setPage,
     totalUsers,
+    autoDisableSuspiciousUsers,
   } = useUsers();
 
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -95,6 +96,7 @@ export const UserManagementPortal = () => {
         totalUsers={totalUsers}
         page={page}
         pageSize={filters.pageSize}
+        onAutoDisableSuspicious={autoDisableSuspiciousUsers}
       />
 
       <BulkActions
