@@ -1,7 +1,6 @@
 import { FirebaseUser } from '@/types/user';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Table,
@@ -11,23 +10,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { 
-  MoreHorizontal, 
   Edit2, 
   Trash2, 
   Shield, 
   ShieldOff,
   Mail,
-  MailX,
-  AlertCircle // Add AlertCircle icon
+  CheckCircle, 
+  XCircle, 
+  User 
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface UserTableProps {
   users: FirebaseUser[];
@@ -53,27 +47,11 @@ export const UserTable = ({
   onDeleteUser,
   onToggleUserStatus,
   page,
-  pageSize,
-  sortDirection,
+  pageSize
 }: UserTableProps) => {
   // Only allow sorting by creationTime
   // Remove local sortDirection state; use parent prop instead
 
-  const getProviderBadge = (user: FirebaseUser) => {
-    const provider = user.providerData[0]?.providerId || 'email';
-    const colors = {
-      'email': 'default',
-      'google.com': 'destructive',
-      'facebook.com': 'secondary',
-    } as const;
-    
-    return (
-      <Badge variant={colors[provider as keyof typeof colors] || 'outline'}>
-        {provider === 'google.com' ? 'Google' : 
-         provider === 'facebook.com' ? 'Facebook' : 'Email'}
-      </Badge>
-    );
-  };
 
   if (loading) {
     return (
@@ -138,17 +116,6 @@ export const UserTable = ({
             <TableHead className="w-12">
               Index
             </TableHead>
-            <TableHead>User</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Provider</TableHead>
-            <TableHead>
-              Created
-              <span style={{ marginLeft: 4 }}>
-                {typeof sortDirection !== 'undefined' && sortDirection === 'asc' ? '↑' : '↓'}
-              </span>
-            </TableHead>
-            <TableHead>Last Sign In</TableHead>
-            <TableHead>Suspicious</TableHead> {/* New column for suspicious users */}
             <TableHead className="w-12">
               <Checkbox
                 checked={selectedUsers.length === users.length && users.length > 0}
@@ -156,13 +123,48 @@ export const UserTable = ({
                 aria-label="Select all users"
               />
             </TableHead>
-            <TableHead className="w-12">Action</TableHead>
+            <TableHead className="w-24 text-center">Status</TableHead>
+            <TableHead>User</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Last Sign In</TableHead>
+            <TableHead className="w-32 text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.map((user, index) => (
-            <TableRow key={user.uid} className={user.isSuspicious ? "bg-yellow-100/50 hover:bg-yellow-100" : "hover:bg-muted/50"}> {/* Highlight suspicious users */}
+            <TableRow key={user.uid} className={user.isSuspicious ? "bg-warning/10 hover:bg-warning/20" : "hover:bg-muted/50"}> {/* Highlight suspicious users */}
               <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
+              <TableCell>
+                <Checkbox
+                  checked={selectedUsers.includes(user.uid)}
+                  onCheckedChange={(checked) => onSelectUser(user.uid, !!checked)}
+                  aria-label={`Select user ${user.displayName || user.email}`}
+                />
+              </TableCell>
+              <TableCell className="text-center">
+                <div className="flex flex-row items-center justify-center space-x-2"> {/* Changed to flex-row and added justify-center */}
+                  {/* Provider Icon */}
+                  {user.providerData[0]?.providerId === 'password' ? (
+                    <Mail className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <User className="h-5 w-5 text-muted-foreground" /> // Using User icon as placeholder
+                  )}
+
+                  {/* Active Status Icon */}
+                  {user.disabled ? (
+                    <ShieldOff className="h-5 w-5 text-destructive" />
+                  ) : (
+                    <Shield className="h-5 w-5 text-green-600" />
+                  )}
+
+                  {/* Email Verified Icon */}
+                  {user.emailVerified ? (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-warning-foreground" />
+                  )}
+                </div>
+              </TableCell>
               <TableCell>
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-8 w-8">
@@ -172,29 +174,14 @@ export const UserTable = ({
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-medium">
+                    <div className={cn("font-medium", user.isSuspicious ? "text-red-500" : "text-foreground")}> 
                       {user.displayName || 'No name'}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground flex items-center">
                       {user.email}
                     </div>
                   </div>
                 </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={user.disabled ? 'destructive' : 'default'}>
-                    {user.disabled ? 'Disabled' : 'Active'}
-                  </Badge>
-                  {user.emailVerified ? (
-                    <Mail className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <MailX className="h-4 w-4 text-red-600" />
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                {getProviderBadge(user)}
               </TableCell>
               <TableCell>
                 <div className="text-sm">
@@ -210,57 +197,20 @@ export const UserTable = ({
                 </div>
               </TableCell>
               <TableCell>
-                {user.isSuspicious ? (
-                  <Badge variant="destructive" className="flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    Suspicious
-                  </Badge>
-                ) : (
-                  <span className="text-muted-foreground text-sm">-</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <Checkbox
-                  checked={selectedUsers.includes(user.uid)}
-                  onCheckedChange={(checked) => onSelectUser(user.uid, !!checked)}
-                  aria-label={`Select user ${user.displayName || user.email}`}
-                />
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-muted border border-transparent hover:border-border">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEditUser(user)}>
-                      <Edit2 className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onToggleUserStatus(user)}>
-                      {user.disabled ? (
-                        <>
-                          <Shield className="mr-2 h-4 w-4" />
-                          Enable
-                        </>
-                      ) : (
-                        <>
-                          <ShieldOff className="mr-2 h-4 w-4" />
-                          Disable
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => onDeleteUser(user)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex flex-row items-center gap-4 justify-center">
+                  <Button variant="ghost" size="icon" onClick={() => onEditUser(user)} title="Edit User">
+                    <Edit2 className="h-4 w-4 text-foreground" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => onToggleUserStatus(user)} title={user.disabled ? "Enable User" : "Disable User"}>
+                    {user.disabled
+                      ? <Shield className="h-4 w-4 text-green-600" /> // Enable: green (non-critical)
+                      : <ShieldOff className="h-4 w-4 text-blue-500" /> // Disable: blue (critical)
+                    }
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => onDeleteUser(user)} title="Delete User">
+                    <Trash2 className="h-4 w-4 text-red-500" /> {/* Delete: red (critical) */}
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
