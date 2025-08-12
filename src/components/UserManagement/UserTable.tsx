@@ -10,18 +10,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { 
-  Edit2, 
-  Trash2, 
-  Shield, 
+import {
+  Edit2,
+  Trash2,
+  Shield,
   ShieldOff,
   Mail,
-  CheckCircle, 
-  XCircle, 
-  User 
+  CheckCircle,
+  XCircle,
+  User
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useState } from 'react'; // Import useState
 
 interface UserTableProps {
   users: FirebaseUser[];
@@ -32,6 +33,7 @@ interface UserTableProps {
   onEditUser: (user: FirebaseUser) => void;
   onDeleteUser: (user: FirebaseUser) => void;
   onToggleUserStatus: (user: FirebaseUser) => void;
+  onUpdateUserName: (uid: string, newName: string) => void; // New prop for updating user name
   page: number;
   pageSize: number;
   sortDirection: 'asc' | 'desc';
@@ -46,12 +48,12 @@ export const UserTable = ({
   onEditUser,
   onDeleteUser,
   onToggleUserStatus,
+  onUpdateUserName, // Ensure this prop is destructured
   page,
   pageSize
 }: UserTableProps) => {
-  // Only allow sorting by creationTime
-  // Remove local sortDirection state; use parent prop instead
-
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editedUserName, setEditedUserName] = useState<string>('');
 
   if (loading) {
     return (
@@ -144,7 +146,7 @@ export const UserTable = ({
               <TableCell className="text-center">
                 <div className="flex flex-row items-center justify-center space-x-2"> {/* Changed to flex-row and added justify-center */}
                   {/* Provider Icon */}
-                  {user.providerData[0]?.providerId === 'password' ? (
+                  {user.providerData && user.providerData[0]?.providerId === 'password' ? (
                     <Mail className="h-5 w-5 text-muted-foreground" />
                   ) : (
                     <User className="h-5 w-5 text-muted-foreground" /> // Using User icon as placeholder
@@ -174,9 +176,41 @@ export const UserTable = ({
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className={cn("font-medium", user.isSuspicious ? "text-red-500" : "text-foreground")}> 
-                      {user.displayName || 'No name'}
-                    </div>
+                    {editingUserId === user.uid ? (
+                      <input
+                        type="text"
+                        value={editedUserName}
+                        onChange={(e) => setEditedUserName(e.target.value)}
+                        onBlur={() => {
+                          if (editedUserName !== user.displayName) {
+                            onUpdateUserName(user.uid, editedUserName);
+                          }
+                          setEditingUserId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            if (editedUserName !== user.displayName) {
+                              onUpdateUserName(user.uid, editedUserName);
+                            }
+                            setEditingUserId(null);
+                          } else if (e.key === 'Escape') {
+                            setEditingUserId(null);
+                          }
+                        }}
+                        className="font-medium bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500"
+                        autoFocus
+                      />
+                    ) : (
+                      <div
+                        className={cn("font-medium", user.isSuspicious ? "text-red-500" : "text-foreground")}
+                        onDoubleClick={() => {
+                          setEditingUserId(user.uid);
+                          setEditedUserName(user.displayName || 'No name');
+                        }}
+                      >
+                        {user.displayName || 'No name'}
+                      </div>
+                    )}
                     <div className="text-sm text-muted-foreground flex items-center">
                       {user.email}
                     </div>
@@ -185,12 +219,15 @@ export const UserTable = ({
               </TableCell>
               <TableCell>
                 <div className="text-sm">
-                  {format(new Date(user.creationTime), 'MMM dd, yyyy')}
+                  {user.creationTime && !isNaN(new Date(user.creationTime).getTime())
+                    ? format(new Date(user.creationTime), 'MMM dd, yyyy')
+                    : 'N/A'
+                  }
                 </div>
               </TableCell>
               <TableCell>
                 <div className="text-sm">
-                  {user.lastSignInTime 
+                  {user.lastSignInTime && !isNaN(new Date(user.lastSignInTime).getTime())
                     ? format(new Date(user.lastSignInTime), 'MMM dd, yyyy')
                     : 'Never'
                   }
@@ -216,7 +253,7 @@ export const UserTable = ({
           ))}
         </TableBody>
       </Table>
-      
+
       {users.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
           No users found matching your criteria

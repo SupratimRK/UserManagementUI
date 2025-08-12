@@ -57,6 +57,10 @@ export const UserManagementPortal = () => {
     await updateUser(uid, updates);
   };
 
+  const handleUpdateUserName = async (uid: string, newName: string) => {
+    await updateUser(uid, { displayName: newName });
+  };
+
   const handleDeleteUser = (user: FirebaseUser) => {
     setDeletingUser(user);
   };
@@ -116,6 +120,7 @@ export const UserManagementPortal = () => {
         onEditUser={handleEditUser}
         onDeleteUser={handleDeleteUser}
         onToggleUserStatus={handleToggleUserStatus}
+        onUpdateUserName={handleUpdateUserName}
         page={page}
         pageSize={filters.pageSize}
         sortDirection={filters.sortDirection}

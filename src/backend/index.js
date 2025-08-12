@@ -77,7 +77,8 @@ app.post('/user/:uid', async (req, res) => {
     const user = await updateUser(req.params.uid, req.body);
     res.json(user);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to update user' });
+    console.error('Error updating user:', err); // Add detailed logging
+    res.status(500).json({ error: 'Failed to update user', details: err.message });
   }
 });
 
