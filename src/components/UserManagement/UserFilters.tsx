@@ -59,66 +59,61 @@ export const UserFilters = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <h2 className="text-2xl font-bold">User Management</h2>
-          <Badge variant="secondary">
-            Showing {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, totalUsers)} of {totalUsers} users
-          </Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={syncUsers}
-            disabled={loading}
-            className="h-8 ml-2"
-          >
-            {loading ? 'Syncing...' : 'Sync Users'}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onAutoDisableSuspicious}
-            disabled={loading}
-            className="h-8 ml-2"
-          >
-            Auto-Disable All Suspicious
-          </Button>
+      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md shadow-sm rounded-b-xl px-4 py-2 flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold tracking-tight">User Management</h2>
+            <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs">
+              {totalUsers} users
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, totalUsers)}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={syncUsers}
+              disabled={loading}
+              className="h-8 font-semibold shadow"
+            >
+              {loading ? 'Syncing...' : 'Sync Users'}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={onAutoDisableSuspicious}
+              disabled={loading}
+              className="h-8 font-semibold shadow"
+            >
+              Auto-Disable Suspicious
+            </Button>
+            {activeFiltersCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className="h-8"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear ({activeFiltersCount})
+              </Button>
+            )}
+          </div>
         </div>
-        
-        {activeFiltersCount > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={clearFilters}
-            className="h-8"
-          >
-            <X className="mr-2 h-4 w-4" />
-            Clear filters ({activeFiltersCount})
-          </Button>
-        )}
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search by email, name, or UID..."
-            value={filters.search}
-            onChange={(e) =>
-              onFiltersChange({ ...filters, search: e.target.value })
-            }
-            className="pl-10"
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <Select
-            value={filters.status}
-            onValueChange={(value: typeof filters.status) =>
-              onFiltersChange({ ...filters, status: value })
-            }
-          >
-            <SelectTrigger className="w-32">
+        <div className="flex flex-row gap-2 overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-muted-foreground/30">
+          <div className="relative min-w-[180px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search email, name, UID..."
+              value={filters.search}
+              onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+              className="pl-10 rounded-full text-xs"
+            />
+          </div>
+          <Select value={filters.status} onValueChange={value => onFiltersChange({ ...filters, status: value as UserFiltersType['status'] })}>
+            <SelectTrigger className="rounded-full px-3 text-xs min-w-[90px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -127,14 +122,8 @@ export const UserFilters = ({
               <SelectItem value="disabled">Disabled</SelectItem>
             </SelectContent>
           </Select>
-
-          <Select
-            value={filters.emailVerified}
-            onValueChange={(value: typeof filters.emailVerified) =>
-              onFiltersChange({ ...filters, emailVerified: value })
-            }
-          >
-            <SelectTrigger className="w-36">
+          <Select value={filters.emailVerified} onValueChange={value => onFiltersChange({ ...filters, emailVerified: value as UserFiltersType['emailVerified'] })}>
+            <SelectTrigger className="rounded-full px-3 text-xs min-w-[90px]">
               <SelectValue placeholder="Email" />
             </SelectTrigger>
             <SelectContent>
@@ -143,32 +132,18 @@ export const UserFilters = ({
               <SelectItem value="unverified">Unverified</SelectItem>
             </SelectContent>
           </Select>
-
-          <Select
-            value={filters.provider}
-            onValueChange={(value: typeof filters.provider) =>
-              onFiltersChange({ ...filters, provider: value })
-            }
-          >
-            <SelectTrigger className="w-32">
+          <Select value={filters.provider} onValueChange={value => onFiltersChange({ ...filters, provider: value as UserFiltersType['provider'] })}>
+            <SelectTrigger className="rounded-full px-3 text-xs min-w-[90px]">
               <SelectValue placeholder="Provider" />
             </SelectTrigger>
             <SelectContent>
               {providerOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
+                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-
-          <Select
-            value={filters.pageSize.toString()}
-            onValueChange={(value) =>
-              onFiltersChange({ ...filters, pageSize: Number(value) })
-            }
-          >
-            <SelectTrigger className="w-[100px]">
+          <Select value={filters.pageSize.toString()} onValueChange={value => onFiltersChange({ ...filters, pageSize: Number(value) })}>
+            <SelectTrigger className="rounded-full px-3 text-xs min-w-[80px]">
               <SelectValue placeholder="Page Size" />
             </SelectTrigger>
             <SelectContent>
@@ -183,12 +158,8 @@ export const UserFilters = ({
               <SelectItem value="5000">5000</SelectItem>
             </SelectContent>
           </Select>
-
-          <Select
-            value={filters.sortField}
-            onValueChange={(value) => onFiltersChange({ ...filters, sortField: value as any })}
-          >
-            <SelectTrigger className="w-32">
+          <Select value={filters.sortField} onValueChange={value => onFiltersChange({ ...filters, sortField: value as any })}>
+            <SelectTrigger className="rounded-full px-3 text-xs min-w-[90px]">
               <SelectValue placeholder="Sort By" />
             </SelectTrigger>
             <SelectContent>
@@ -197,12 +168,8 @@ export const UserFilters = ({
               <SelectItem value="email">Email</SelectItem>
             </SelectContent>
           </Select>
-
-          <Select
-            value={filters.sortDirection}
-            onValueChange={(value) => onFiltersChange({ ...filters, sortDirection: value as any })}
-          >
-            <SelectTrigger className="w-32">
+          <Select value={filters.sortDirection} onValueChange={value => onFiltersChange({ ...filters, sortDirection: value as any })}>
+            <SelectTrigger className="rounded-full px-3 text-xs min-w-[90px]">
               <SelectValue placeholder="Sort Direction" />
             </SelectTrigger>
             <SelectContent>
@@ -210,15 +177,8 @@ export const UserFilters = ({
               <SelectItem value="desc">Descending</SelectItem>
             </SelectContent>
           </Select>
-
-          {/* Replace Switch with Select for Suspicious Only */}
-          <Select
-            value={filters.suspiciousOnly || 'all'}
-            onValueChange={(value) =>
-              onFiltersChange({ ...filters, suspiciousOnly: value as UserFiltersType['suspiciousOnly'] })
-            }
-          >
-            <SelectTrigger className="w-40">
+          <Select value={filters.suspiciousOnly || 'all'} onValueChange={value => onFiltersChange({ ...filters, suspiciousOnly: value as UserFiltersType['suspiciousOnly'] })}>
+            <SelectTrigger className="rounded-full px-3 text-xs min-w-[120px]">
               <SelectValue placeholder="Suspicious Users" />
             </SelectTrigger>
             <SelectContent>

@@ -265,17 +265,13 @@ app.get('/users', (req, res) => {
 app.post('/user/:uid', async (req, res) => {
   try {
     const user = await updateUser(req.params.uid, req.body);
-
-    // Retrieve the current isSuspicious status from SQLite
-    const existingUserInDb = db.prepare('SELECT isSuspicious FROM users WHERE uid = ?').get(req.params.uid);
-    const isSuspiciousFlag = existingUserInDb ? existingUserInDb.isSuspicious : 0; // Default to 0 if not found
-
     // After updating in Firebase, update in SQLite
-    insertOrUpdateUser(user, isSuspiciousFlag);
+    // Note: isSuspicious status is not re-calculated here for performance. 
+    // It will be updated on the next /sync-users call.
+    insertOrUpdateUser(user, user.isSuspicious ? 1 : 0); // Pass existing isSuspicious status
     res.json(user);
   } catch (err) {
-    console.error('Failed to update user:', err); // Add more detailed logging
-    res.status(500).json({ error: 'Failed to update user', details: err.message }); // Return error details
+    res.status(500).json({ error: 'Failed to update user' });
   }
 });
 
