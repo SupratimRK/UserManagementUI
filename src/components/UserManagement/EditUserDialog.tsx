@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FirebaseUser } from '@/types/user';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,13 +31,16 @@ export const EditUserDialog = ({
   const [photoURL, setPhotoURL] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Update local state when user changes
-  useState(() => {
+  // Prefill local state when `user` prop changes or dialog opens
+  useEffect(() => {
     if (user) {
-      setDisplayName(user.displayName || '');
-      setPhotoURL(user.photoURL || '');
+      setDisplayName(user.displayName ?? '');
+      setPhotoURL(user.photoURL ?? '');
+    } else {
+      setDisplayName('');
+      setPhotoURL('');
     }
-  });
+  }, [user]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -125,11 +128,7 @@ export const EditUserDialog = ({
 
           <div className="grid gap-2">
             <Label>Email</Label>
-            <Input
-              value={user.email || ''}
-              disabled
-              className="bg-muted"
-            />
+            <div className="px-3 py-2 bg-muted rounded">{user.email || '—'}</div>
             <p className="text-sm text-muted-foreground">
               Email cannot be changed from this interface
             </p>
