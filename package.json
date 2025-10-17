@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start:backend": "node src/backend/index.cjs",
-    "start:frontend": "vite --port 4001",
+    "start:frontend": "vite preview --port 4001",
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
   },
   "dependencies": {
