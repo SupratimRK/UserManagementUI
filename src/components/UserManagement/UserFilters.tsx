@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Search, X } from 'lucide-react';
+import { Search, X, Download } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 
 interface UserFiltersProps {
@@ -35,7 +35,7 @@ export const UserFilters = ({
   pageSize,
   onAutoDisableSuspicious,
 }: UserFiltersProps) => {
-  const { syncUsers, loading } = useUsers();
+  const { syncUsers, loading, exportToCSV } = useUsers();
   const activeFiltersCount = [
     filters.search,
     filters.status !== 'all' ? filters.status : null,
@@ -79,6 +79,16 @@ export const UserFilters = ({
               className="h-8 font-semibold shadow"
             >
               {loading ? 'Syncing...' : 'Sync Users'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToCSV}
+              disabled={loading}
+              className="h-8 font-semibold shadow"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
             </Button>
             <Button
               variant="destructive"

@@ -353,4 +353,37 @@ app.post('/auto-disable-suspicious-users', async (req, res) => {
   }
 });
 
+// Export all users to CSV
+app.get('/users/export-csv', async (req, res) => {
+  try {
+    const allUsers = db.prepare('SELECT * FROM users').all().map(row => ({
+      ...row,
+      emailVerified: !!row.emailVerified,
+      disabled: !!row.disabled,
+      customClaims: JSON.parse(row.customClaims),
+      providerData: JSON.parse(row.providerData)
+    }));
+
+    // Create CSV content
+    const csvHeaders = 'UID,Email,Display Name,Email Verified,Disabled,Creation Time,Last Sign In Time,Provider\n';
+    const csvRows = allUsers.map(user => {
+      const displayName = (user.displayName || '').replace(/"/g, '""'); // Escape quotes
+      const email = (user.email || '').replace(/"/g, '""');
+      const provider = user.providerData.map(p => p.providerId).join(';');
+
+      return `"${user.uid}","${email}","${displayName}",${user.emailVerified},${user.disabled},"${user.creationTime}","${user.lastSignInTime || ''}","${provider}"`;
+    }).join('\n');
+
+    const csv = csvHeaders + csvRows;
+
+    // Set headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="users_export_${new Date().toISOString().split('T')[0]}.csv"`);
+    res.send(csv);
+  } catch (err) {
+    console.error('Error exporting users:', err);
+    res.status(500).json({ error: 'Failed to export users', details: err.message });
+  }
+});
+
 app.listen(3001, () => console.log('Backend running on port 3001'));
