@@ -58,7 +58,11 @@ cd UserManagementUI
     - Go to "Project settings" (the gear icon next to "Project overview").
     - Select the "Service accounts" tab.
     - Click on "Generate new private key" and then "Generate key". This will download a JSON file.
-4.  **Place `serviceAccountKey.json`**: Rename the downloaded JSON file to `serviceAccountKey.json` and place it in the root directory of this project (i.e., `c:/Users/Supratim/Downloads/Playground/Firebase admin SDK/UserManagementUI/serviceAccountKey.json`). **Do not commit this file to version control.** Refer to `serviceAccountKey.json.EXAMPLE.md` for an example structure.
+4.  **Set Environment Variable**: Copy the contents of the downloaded JSON file and set it as an environment variable named `FIREBASE_SERVICE_ACCOUNT_JSON`. For local development, create a `.env` file in the project root with:
+    ```
+    FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"your-project-id",...}
+    ```
+    **Do not commit the `.env` file to version control.** Refer to `.env.example` for the structure.
 
 ### 3. Install Dependencies
 
@@ -158,6 +162,37 @@ The UI provides comprehensive filtering and sorting capabilities to efficiently 
 - **Sorting**: Sort the user list by `Creation Time` or other relevant fields in ascending or descending order.
 
 These filters are applied on the backend, leveraging the SQLite cache for fast and efficient data retrieval.
+
+## Automated User Management
+
+The project includes automated scripts for periodic user synchronization and security management:
+
+### Sync and Auto-Disable Suspicious Users
+
+- **Script**: `sync-and-disable.cjs`
+- **Purpose**: Synchronizes all users from Firebase Auth to the local SQLite cache, identifies suspicious users (those with identical display names and creation dates), and automatically disables any suspicious users that are not already disabled.
+- **Automation**: Runs automatically via GitHub Actions at 3:00 AM IST daily
+- **Usage**:
+  - Local: `npm run sync-and-disable`
+  - Manual trigger: Go to GitHub Actions tab and run the workflow manually
+
+### Setting Up GitHub Actions Automation
+
+1. **Create GitHub Secret**:
+   - Go to your GitHub repository settings
+   - Navigate to "Secrets and variables" > "Actions"
+   - Click "New repository secret"
+   - Name: `FIREBASE_SERVICE_ACCOUNT_JSON`
+   - Value: Copy the entire JSON string from your `.env` file (the value of `FIREBASE_SERVICE_ACCOUNT_JSON`)
+
+2. **The workflow** (`.github/workflows/sync-users.yml`) will:
+   - Run automatically every day at 3:00 AM IST
+   - Checkout your code
+   - Install dependencies
+   - Run the sync and auto-disable script
+   - You can also trigger it manually from the Actions tab
+
+This automation helps maintain user security by regularly identifying and disabling potentially suspicious accounts.
 
 ## Contributing
 

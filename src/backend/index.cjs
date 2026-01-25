@@ -1,6 +1,7 @@
 // Use CommonJS require for Node.js compatibility
+require('dotenv').config();
 const admin = require('firebase-admin');
-const serviceAccount = require('../../serviceAccountKey.json');
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
 const express = require('express');
 const cors = require('cors'); // Import cors
 const Database = require('better-sqlite3');
