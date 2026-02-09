@@ -23,6 +23,7 @@ export interface UserFilters {
   status: 'all' | 'enabled' | 'disabled';
   emailVerified: 'all' | 'verified' | 'unverified';
   provider: 'all' | 'email' | 'google' | 'facebook';
+  admin: 'all' | 'admin' | 'non-admin';
   dateRange: {
     from: Date | null;
     to: Date | null;

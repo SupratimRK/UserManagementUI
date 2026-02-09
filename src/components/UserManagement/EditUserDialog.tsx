@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, User } from 'lucide-react';
 
@@ -30,15 +31,18 @@ export const EditUserDialog = ({
   const [displayName, setDisplayName] = useState('');
   const [photoURL, setPhotoURL] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Prefill local state when `user` prop changes or dialog opens
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName ?? '');
       setPhotoURL(user.photoURL ?? '');
+      setIsAdmin(user.customClaims?.admin === true);
     } else {
       setDisplayName('');
       setPhotoURL('');
+      setIsAdmin(false);
     }
   }, [user]);
 
@@ -47,10 +51,14 @@ export const EditUserDialog = ({
 
     setLoading(true);
     try {
-      await onSave(user.uid, {
+      const updates: Partial<FirebaseUser> = {
         displayName: displayName.trim() || null,
         photoURL: photoURL.trim() || null,
-      });
+      };
+      if (user.customClaims?.admin !== isAdmin) {
+        updates.customClaims = isAdmin ? { admin: true } : {};
+      }
+      await onSave(user.uid, updates);
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to update user:', error);
@@ -132,6 +140,15 @@ export const EditUserDialog = ({
             <p className="text-sm text-muted-foreground">
               Email cannot be changed from this interface
             </p>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="admin"
+              checked={isAdmin}
+              onCheckedChange={(checked) => setIsAdmin(checked as boolean)}
+            />
+            <Label htmlFor="admin">Admin privileges</Label>
           </div>
         </div>
 

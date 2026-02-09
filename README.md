@@ -22,6 +22,7 @@ While Firebase provides a web-based console for basic user management, this proj
 - Delete users.
 - Bulk actions for user management.
 - User filtering and search.
+- Admin status management: Filter users by admin status and toggle admin privileges.
 
 ## Technologies Used
 
@@ -158,6 +159,7 @@ The UI provides comprehensive filtering and sorting capabilities to efficiently 
 - **Status Filter**: Filter users by their account status: `Enabled` or `Disabled`.
 - **Email Verification Filter**: Filter users based on whether their email address is `Verified` or `Unverified`.
 - **Authentication Provider Filter**: Select a specific authentication provider (e.g., `password`, `google.com`, `github.com`) to view users who signed up using that method.
+- **Admin Filter**: Filter users by admin status: `All Users`, `Admins`, or `Non-Admins`.
 - **Date Range Filter**: Filter users by their account creation time within a specified date range (from and to dates).
 - **Sorting**: Sort the user list by `Creation Time` or other relevant fields in ascending or descending order.
 

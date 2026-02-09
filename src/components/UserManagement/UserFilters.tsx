@@ -41,6 +41,7 @@ export const UserFilters = ({
     filters.status !== 'all' ? filters.status : null,
     filters.emailVerified !== 'all' ? filters.emailVerified : null,
     filters.provider !== 'all' ? filters.provider : null,
+    filters.admin !== 'all' ? filters.admin : null,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -49,6 +50,7 @@ export const UserFilters = ({
       status: 'all',
       emailVerified: 'all',
       provider: 'all',
+      admin: 'all',
       dateRange: { from: null, to: null },
       pageSize: 100, // Default page size
       sortField: 'creationTime', // Default sort field
@@ -150,6 +152,16 @@ export const UserFilters = ({
               {providerOptions.map(option => (
                 <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={filters.admin} onValueChange={value => onFiltersChange({ ...filters, admin: value as UserFiltersType['admin'] })}>
+            <SelectTrigger className="rounded-full px-3 text-xs min-w-[90px]">
+              <SelectValue placeholder="Admin" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="admin">Admins</SelectItem>
+              <SelectItem value="non-admin">Non-Admins</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filters.pageSize.toString()} onValueChange={value => onFiltersChange({ ...filters, pageSize: Number(value) })}>

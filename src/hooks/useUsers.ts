@@ -12,6 +12,7 @@ export const useUsers = () => {
     status: 'all',
     emailVerified: 'all',
     provider: 'all',
+    admin: 'all',
     dateRange: { from: null, to: null },
     pageSize: 100,
     sortField: 'creationTime', // Default sort field
@@ -43,6 +44,9 @@ export const useUsers = () => {
       }
       if (filters.provider !== 'all') {
         queryParams.append('provider', filters.provider);
+      }
+      if (filters.admin !== 'all') {
+        queryParams.append('admin', filters.admin);
       }
       if (filters.dateRange?.from) {
         queryParams.append('dateRangeFrom', filters.dateRange.from.toISOString());

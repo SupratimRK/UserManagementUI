@@ -25,7 +25,12 @@ const listUsers = async (nextPageToken) => {
 };
 
 const updateUser = async (uid, updates) => {
-  const userRecord = await auth.updateUser(uid, updates);
+  // Handle customClaims separately
+  const { customClaims, ...otherUpdates } = updates;
+  if (customClaims !== undefined) {
+    await auth.setCustomUserClaims(uid, customClaims);
+  }
+  const userRecord = await auth.updateUser(uid, otherUpdates);
   return userRecordToFirebaseUser(userRecord);
 };
 
@@ -206,6 +211,15 @@ app.get('/users', (req, res) => {
   if (req.query.provider && req.query.provider !== 'all') {
     whereClauses.push('providerData LIKE ?');
     params.push(`%"providerId":"${req.query.provider}"%`);
+  }
+
+  // Apply admin filter
+  if (req.query.admin && req.query.admin !== 'all') {
+    if (req.query.admin === 'admin') {
+      whereClauses.push('json_extract(customClaims, \'$.admin\') = 1');
+    } else if (req.query.admin === 'non-admin') {
+      whereClauses.push('(customClaims IS NULL OR json_extract(customClaims, \'$.admin\') != 1)');
+    }
   }
 
   // Apply date range filter
